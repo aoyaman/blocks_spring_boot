@@ -12,6 +12,12 @@ td {
 .cell1 {
     background-color: red;
 }
+.cell11 {
+    background-color: red;
+    opacity: 0.55;
+}
+
+
 
 .cell2 {
     background-color: blue;
