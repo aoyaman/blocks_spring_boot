@@ -1,18 +1,29 @@
 package com.example.blocks;
 
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+
 import lombok.Data;
 
 @Data
+@Entity
 public class Block {
-    private Position[] positions;
+    public static final int STATUS_NOT_SETTED = 0;  // 未セット
+    public static final int STATUS_SETTED = 1;      // セット済み
+    @Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    private Integer id;
 
-    public Block(int[][] list) {
-        positions = new Position[list.length];
-        for (int i = 0; i < list.length; i++) {
-            Position p = new Position();
-            p.setX(list[i][0]);
-            p.setY(list[i][1]);
-            positions[i] = p;
-        }
-    }
+    private Integer blockType;  // ブロックの種類
+    private Integer color;      // 色
+
+    private Integer x;          // 配置先のX座標
+    private Integer y;          // 配置先のY座標
+    private Integer angle;      // ブロックの向き
+
+    private Integer gameId;     // ゲームID
+    private Integer status;     // 状態
+
 }

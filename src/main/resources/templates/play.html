@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Blocks by Spring Boot</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <link th:href="@{/css/home.css}" rel="stylesheet">
+</head>
+
+<body>
+    <h1>Blocks by Spring Boot</h1>
+
+    <table class="inline-top">
+        <tr th:each="row, statY : ${cells}">
+            <td th:each="cell, statX : ${row}" th:class="'cell'  + ${cell}">
+                <a th:if="${ cell > 0 }"
+                    th:href="@{/play(block=${cell}, id=${id}, y=${statY.index}, x=${statX.index})}">
+                    <div class="cellBlock"></div>
+                </a>
+            </td>
+        </tr>
+    </table>
+
+    <div class="inline-top">
+        <ul>
+            <li th:each="item, stat :${kouhoList}">
+                <a th:href="@{/play(block=${selectBlock}, id=${id}, x=${item.get(0)}, y=${item.get(1)})}" th:text="${'候補' + #numbers.formatInteger(stat.index + 1, 2) + '(x=' + #numbers.formatInteger(item.get(0),2) + ', y=' + #numbers.formatInteger(item.get(1),2) + ')'}"></a>
+            </li>
+        </ul>
+    </div>
+    <hr />
+    <table style="display: inline-block;">
+        <tr th:each="row : ${nexts}">
+            <td th:each="cell : ${row}" th:class="'cell'  + ${cell > 0 ? nowPlayer : 0}">
+                <a th:href="@{/play(block=${cell}, id=${id})}" th:if="${ cell > 0 }">
+                    <div class="cellBlock"></div>
+                </a>
+            </td>
+        </tr>
+    </table>
+
+
+    <table class="inline-top">
+        <tr th:each="row : ${selectCells}">
+            <td th:each="cell : ${row}" th:class="'cell'  + ${cell > 0 ? nowPlayer : 0}">
+                <a th:href="@{/play(block=${cell}, id=${id})}" th:if="${ cell > 0 }">
+                    <div class="cellBlock"></div>
+                </a>
+            </td>
+        </tr>
+    </table>
+
+</body>
+
+</html>

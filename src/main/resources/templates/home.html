@@ -2,38 +2,19 @@
 
 <html xmlns:th="http://www.thymeleaf.org">
 
-  <head>
+<head>
     <title>Blocks by Spring Boot</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
     <link th:href="@{/css/home.css}" rel="stylesheet">
-  </head>
+</head>
 
-  <body>
+<body>
     <h1>Blocks by Spring Boot</h1>
 
-    <table>
-        <tr th:each="row : ${cells}">
-            <td th:each="cell : ${row}" th:class="'cell'  + ${cell}"></td>
-        </tr>
-    </table>
-    <hr />
-    <table style="display: inline-block;">
-        <tr th:each="row : ${nexts}">
-            <td th:each="cell : ${row}" th:class="'cell'  + ${cell > 0 ? nowPlayer : 0}">
-                <a th:href="@{/(block=${cell})}"><div class="cellBlock"></div></a>
-            </td>
-        </tr>
-    </table>
+    <form action="/start" method="post">
+        <input type="submit" value="スタート">
+    </form>
 
-
-    <table class="select-cells">
-        <tr th:each="row : ${selectCells}">
-            <td th:each="cell : ${row}" th:class="'cell'  + ${cell > 0 ? nowPlayer : 0}">
-                <a th:href="@{/(block=${cell})}"><div class="cellBlock"></div></a>
-            </td>
-        </tr>
-    </table>
-
-  </body>
+</body>
 
 </html>
