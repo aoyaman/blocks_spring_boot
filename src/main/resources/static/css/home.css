@@ -24,3 +24,20 @@ td {
 .cell4 {
     background-color: green;
 }
+
+a {
+    font-size: small;
+    text-decoration: none;
+    display: blcok;
+    width: 100%;
+    height: 100%;
+}
+.cellBlock {
+    width: 15px;
+    height: 15px;
+}
+
+.select-cells {
+    display: inline-block;
+    vertical-align: top;
+}

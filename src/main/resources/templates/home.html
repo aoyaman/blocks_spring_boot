@@ -16,6 +16,23 @@
             <td th:each="cell : ${row}" th:class="'cell'  + ${cell}"></td>
         </tr>
     </table>
+    <hr />
+    <table style="display: inline-block;">
+        <tr th:each="row : ${nexts}">
+            <td th:each="cell : ${row}" th:class="'cell'  + ${cell > 0 ? nowPlayer : 0}">
+                <a th:href="@{/(block=${cell})}"><div class="cellBlock"></div></a>
+            </td>
+        </tr>
+    </table>
+
+
+    <table class="select-cells">
+        <tr th:each="row : ${selectCells}">
+            <td th:each="cell : ${row}" th:class="'cell'  + ${cell > 0 ? nowPlayer : 0}">
+                <a th:href="@{/(block=${cell})}"><div class="cellBlock"></div></a>
+            </td>
+        </tr>
+    </table>
 
   </body>
 
