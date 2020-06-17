@@ -1,0 +1,26 @@
+td {
+    width: 15px;
+    height: 15px;
+    border: 1px solid black;
+    text-align: center;
+}
+
+.cell0 {
+    background-color: lightgray;
+}
+
+.cell1 {
+    background-color: red;
+}
+
+.cell2 {
+    background-color: blue;
+}
+
+.cell3 {
+    background-color: yellow;
+}
+
+.cell4 {
+    background-color: green;
+}

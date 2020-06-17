@@ -5,13 +5,17 @@
   <head>
     <title>Blocks by Spring Boot</title>
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-
+    <link th:href="@{/css/home.css}" rel="stylesheet">
   </head>
 
   <body>
     <h1>Blocks by Spring Boot</h1>
 
-    <p th:text="#{home.welcome}">Welcome to our grocery store!</p>
+    <table>
+        <tr th:each="row : ${cells}">
+            <td th:each="cell : ${row}" th:class="'cell'  + ${cell}"></td>
+        </tr>
+    </table>
 
   </body>
 
