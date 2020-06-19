@@ -6,10 +6,10 @@ import lombok.Data;
 public class Kouho {
   private int x;
   private int y;
-  private String color;
-  public Kouho(int x, int y, String color) {
+  private String[][] cells;
+  public Kouho(int x, int y, String[][] cells) {
     this.x = x;
     this.y = y;
-    this.color = color;
+    this.cells = cells;
   }
 }

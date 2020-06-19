@@ -23,36 +23,15 @@
                 </td>
             </tr>
         </table>
-
-        <!-- 候補-->
-        <div class="inline-top">
-            <ul class="kouho-list">
-                <li th:each="item, stat :${kouhoList}" class="list-group">
-                    <a th:href="@{/play(block=${selectBlock}, id=${id}, x=${item.getX()}, y=${item.getY()})}"
-                        th:text="${'候補' + #numbers.formatInteger(stat.index + 1, 2) + '(x=' + #numbers.formatInteger(item.getX(),2) + ', y=' + #numbers.formatInteger(item.getY(),2) + ')'}"
-                        class="list-group-item kouho-item" th:style="'background-color: #' + ${item.getColor()}"></a>
-                </li>
-            </ul>
-            <a th:href="@{/oku(block=${selectBlock}, id=${id}, x=${kouhoX}, y=${kouhoY})}"
-                th:if="${kouhoX >= 0}" class="btn btn-dark">決定</a>
-        </div>
         <hr />
 
         <!-- 手持ちのブロック -->
         <table style="display: inline-block;">
             <tr th:each="row : ${nexts}">
                 <td th:each="cell : ${row}" class="cell" th:style="'background-color: #' + ${cell.getColor()}">
-                    <a th:href="@{/play(block=${cell.getBlockType()}, id=${id})}" th:if="${cell.isDefault() == false}">
+                    <a th:href="@{/kouho(block=${cell.getBlockType()}, id=${id})}" th:if="${cell.isDefault() == false}">
                         <div class="cellBlock"></div>
                     </a>
-                </td>
-            </tr>
-        </table>
-
-        <!-- 選択しているブロック -->
-        <table class="inline-top">
-            <tr th:each="row : ${selectCells}">
-                <td th:each="cell : ${row}" class="cell" th:style="'background-color: #' + ${cell}">
                 </td>
             </tr>
         </table>

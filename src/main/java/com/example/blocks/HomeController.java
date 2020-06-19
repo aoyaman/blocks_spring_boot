@@ -142,14 +142,10 @@ public class HomeController {
     // セット済みのブロック情報を取得
     List<Block> settedBlocks = blockRepository.findByGameIdAndStatus(id, Block.STATUS_SETTED);
     for (Block block : settedBlocks) {
-      drawBlock(block.getBlockType() - 1, block.getX(), block.getY(), cells, Color.getColor(block.getPlayer()));
+      drawBlock(block.getBlockType(), block.getX(), block.getY(), cells, Color.getColor(block.getPlayer()));
     }
 
-
-    // テスト用コード
-    // drawBlock(10, 10, 10, cells, Color.getColor(1));
-
-    // 候補表示用の配列を作成
+    // まだ置いていないブロックの配列を作成
     Cell[][] nexts = new Cell[12][23];
     for (int y = 0; y < nexts.length; y++) {
       for (int x = 0; x < nexts[y].length; x++) {
@@ -162,58 +158,94 @@ public class HomeController {
     }
 
 
-    List<Kouho> kouhoList = new ArrayList<Kouho>(); // 置ける場所の候補リスト
-    String[][] selectCells = new String[5][5];
-    for (int y = 0; y < selectCells.length; y++) {
-      for (int x = 0; x < selectCells[y].length; x++) {
-        selectCells[y][x] = Color.DEFAULT;
-      }
-    }
-    if (selectBlock > 0) {
-      // 選択しているブロックを表示
-      drawBlock(selectBlock - 1, 0, 0, selectCells, nowPlayerColor);
-
-      // 置ける場所の候補リスト
-      for (int y = 0; y < cells.length; y++) {
-        for (int x = 0; x < cells[y].length; x++) {
-          if (checkBlock(selectBlock - 1, x, y, cells, nowPlayerColor)) {
-            String color = Color.getColor(nowPlayer, kouhoList.size() + 1);
-            if (x == kouhoX && y == kouhoY) {
-              color = "ffffff"; // 選択色
-            }
-            Kouho kouho = new Kouho(x, y, color);
-            kouhoList.add(kouho);
-          }
-        }
-      }
-
-      // 候補の表示
-      for (Kouho kouho : kouhoList) {
-        for (int[] position : BLOCK_SHAPE[selectBlock - 1]) {
-          int newY = kouho.getY() + position[1];
-          int newX = kouho.getX() + position[0];
-          if (newX == kouhoX && newY == kouhoY) {
-            cells[newY][newX] = "ffffff"; // 選択色
-          } else {
-            cells[newY][newX] = kouho.getColor(); // t.get().getNowPlayer() + 10;  // 候補なので+10して区別をつける
-          }
-        }
-      }
-
-    }
-
     model.addAttribute("cells", cells);
     model.addAttribute("nexts", nexts);
-    model.addAttribute("selectCells", selectCells);
     model.addAttribute("selectBlock", selectBlock);
-    model.addAttribute("kouhoX", kouhoX);
-    model.addAttribute("kouhoY", kouhoY);
-    model.addAttribute("kouhoList", kouhoList);
     model.addAttribute("nowPlayer", nowPlayer);
     model.addAttribute("nowPlayerColor", nowPlayerColor);
     model.addAttribute("id", ret.get().getId());
 
     return "play";
+  }
+
+
+  /**
+   * 配置の候補を表示する
+   */
+  @RequestMapping("/kouho")
+  public String kouho(Model model, @RequestParam(name = "block", required = true, defaultValue = "0") int selectBlock, @RequestParam(name = "id",required = true, defaultValue = "0") int id) {
+
+    // idでgameテーブルを検索する
+    Optional<Game> ret = gameRepository.findById(id);
+    if (!ret.isPresent()) {
+      System.out.println("ERROR! game id is not found! id=" + id);
+      return "redirect:/";
+    }
+    int nowPlayer = ret.get().getNowPlayer();
+    String nowPlayerColor = Color.getColor(nowPlayer);
+
+
+    // まだ置いていないブロックの配列を作成
+    Cell[][] nexts = new Cell[12][23];
+    for (int y = 0; y < nexts.length; y++) {
+      for (int x = 0; x < nexts[y].length; x++) {
+        nexts[y][x] = new Cell(Color.DEFAULT, 0);
+      }
+    }
+    List<Block> notSetBlocks = blockRepository.findByGameIdAndStatusAndPlayer(id, Block.STATUS_NOT_SETTED, nowPlayer);
+    for (Block block : notSetBlocks) {
+      String color = Color.getColor(block.getPlayer());
+      if (block.getBlockType() == selectBlock) {
+        color = Color.getKouhoColor(block.getPlayer());
+      }
+      drawNextBlock(block, nexts, color);
+    }
+
+    // 表示用のセル配置を作成
+    String[][] cells = new String[20][20];
+    for (int y = 0; y < cells.length; y++) {
+      for (int x = 0; x < cells[y].length; x++) {
+        cells[y][x] = Color.DEFAULT;
+      }
+    }
+
+    // セット済みのブロック情報を取得
+    List<Block> settedBlocks = blockRepository.findByGameIdAndStatus(id, Block.STATUS_SETTED);
+    for (Block block : settedBlocks) {
+      drawBlock(block.getBlockType(), block.getX(), block.getY(), cells, Color.getColor(block.getPlayer()));
+    }
+
+    // 置ける場所の候補リスト
+    List<Kouho> kouhoList = new ArrayList<Kouho>(); // 置ける場所の候補リスト
+    for (int y = 0; y < cells.length; y++) {
+      for (int x = 0; x < cells[y].length; x++) {
+        if (checkBlock(selectBlock, x, y, cells, nowPlayerColor)) {
+
+          // 候補用の色を取得
+          String color = Color.getKouhoColor(nowPlayer);
+
+          // ここに置いた場合の絵を書く
+          String[][] cells2 = new String[20][20];
+          for (int i = 0; i < cells.length; i++) {
+            cells2[i] = cells[i].clone();
+          }
+          drawBlock(selectBlock, x, y, cells2, color);
+
+          // 候補をリストに追加
+          Kouho kouho = new Kouho(x, y, cells2);
+          kouhoList.add(kouho);
+        }
+      }
+    }
+
+    model.addAttribute("nexts", nexts);
+    model.addAttribute("selectBlock", selectBlock);
+    model.addAttribute("kouhoList", kouhoList);
+    model.addAttribute("nowPlayer", nowPlayer);
+    model.addAttribute("nowPlayerColor", nowPlayerColor);
+    model.addAttribute("id", ret.get().getId());
+
+    return "kouho";
   }
 
   /**
@@ -271,7 +303,7 @@ public class HomeController {
     int index = block.getBlockType();
     int x =  NEXT_POSITIONS[block.getBlockType()][0];
     int y =  NEXT_POSITIONS[block.getBlockType()][1];
-    Cell cell = new Cell(color, block.getBlockType() + 1);
+    Cell cell = new Cell(color, block.getBlockType());
     for (int[] position : BLOCK_SHAPE[index]) {
       cells[y + position[1]][x + position[0]] = cell;
     }
