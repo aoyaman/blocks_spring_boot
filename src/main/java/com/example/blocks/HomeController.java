@@ -139,10 +139,11 @@ public class HomeController {
       }
     }
 
+
     // セット済みのブロック情報を取得
     List<Block> settedBlocks = blockRepository.findByGameIdAndStatus(id, Block.STATUS_SETTED);
     for (Block block : settedBlocks) {
-      drawBlock(block.getBlockType(), block.getX(), block.getY(), cells, Color.getColor(block.getPlayer()));
+      drawBlock(block.getBlockType(), block.getX(), block.getY(), cells, Color.getColor(block.getPlayer()), block.getAngle() == null ? 0 : block.getAngle());
     }
 
     // まだ置いていないブロックの配列を作成
@@ -173,7 +174,7 @@ public class HomeController {
    * 配置の候補を表示する
    */
   @RequestMapping("/kouho")
-  public String kouho(Model model, @RequestParam(name = "block", required = true, defaultValue = "0") int selectBlock, @RequestParam(name = "id",required = true, defaultValue = "0") int id) {
+  public String kouho(Model model, @RequestParam(name = "id",required = true, defaultValue = "0") int id, @RequestParam(name = "block", required = true, defaultValue = "0") int selectBlock, @RequestParam(name = "angle",required = false, defaultValue = "0") int angle) {
 
     // idでgameテーブルを検索する
     Optional<Game> ret = gameRepository.findById(id);
@@ -212,14 +213,14 @@ public class HomeController {
     // セット済みのブロック情報を取得
     List<Block> settedBlocks = blockRepository.findByGameIdAndStatus(id, Block.STATUS_SETTED);
     for (Block block : settedBlocks) {
-      drawBlock(block.getBlockType(), block.getX(), block.getY(), cells, Color.getColor(block.getPlayer()));
+      drawBlock(block.getBlockType(), block.getX(), block.getY(), cells, Color.getColor(block.getPlayer()), block.getAngle() == null ? 0 : block.getAngle());
     }
 
     // 置ける場所の候補リスト
     List<Kouho> kouhoList = new ArrayList<Kouho>(); // 置ける場所の候補リスト
     for (int y = 0; y < cells.length; y++) {
       for (int x = 0; x < cells[y].length; x++) {
-        if (checkBlock(selectBlock, x, y, cells, nowPlayerColor)) {
+        if (checkBlock(selectBlock, x, y, cells, nowPlayerColor, angle)) {
 
           // 候補用の色を取得
           String color = Color.getKouhoColor(nowPlayer);
@@ -229,7 +230,7 @@ public class HomeController {
           for (int i = 0; i < cells.length; i++) {
             cells2[i] = cells[i].clone();
           }
-          drawBlock(selectBlock, x, y, cells2, color);
+          drawBlock(selectBlock, x, y, cells2, color, angle);
 
           // 候補をリストに追加
           Kouho kouho = new Kouho(x, y, cells2);
@@ -241,6 +242,7 @@ public class HomeController {
     model.addAttribute("nexts", nexts);
     model.addAttribute("selectBlock", selectBlock);
     model.addAttribute("kouhoList", kouhoList);
+    model.addAttribute("angle", angle);
     model.addAttribute("nowPlayer", nowPlayer);
     model.addAttribute("nowPlayerColor", nowPlayerColor);
     model.addAttribute("id", ret.get().getId());
@@ -252,7 +254,7 @@ public class HomeController {
    * ブロックを置いたアクション
    */
   @RequestMapping("/oku")
-  public ModelAndView oku(Model model, @RequestParam(name = "block", required = true, defaultValue = "0") int selectBlock, @RequestParam(name = "id",required = true, defaultValue = "0") int id, @RequestParam(name = "x", required = true, defaultValue = "-1") int x, @RequestParam(name = "y", required = true, defaultValue = "-1") int y) {
+  public ModelAndView oku(Model model, @RequestParam(name = "block", required = true, defaultValue = "0") int selectBlock, @RequestParam(name = "id",required = true, defaultValue = "0") int id, @RequestParam(name = "x", required = true, defaultValue = "-1") int x, @RequestParam(name = "y", required = true, defaultValue = "-1") int y, @RequestParam(name = "angle", required = true, defaultValue = "angle") int angle) {
 
     // idでgameテーブルを検索する
     Optional<Game> ret = gameRepository.findById(id);
@@ -273,6 +275,7 @@ public class HomeController {
       block.setStatus(Block.STATUS_SETTED);
       block.setX(x);
       block.setY(y);
+      block.setAngle(angle);
       blockRepository.save(block);
     }
 
@@ -287,10 +290,59 @@ public class HomeController {
   }
 
   /**
+   * ブロックの形を計算する
+   */
+  private int[][] calcBlockShape(int[][] oldShape, int angle) {
+    if (angle == 0) {
+      return oldShape;
+    }
+    String [][] cells = new String[5][5];
+    String [][] cells2 = new String[5][5];
+
+    // まず、左上を始点として角度なしで描く
+    drawBlock(oldShape, 0, 0, cells, "ZZZ");
+
+    for (int a = 0; a < angle; a++) {
+      // 90度回転
+      for (int x = 0; x < 5; x++) {
+        for (int y = 0; y < 5; y++) {
+          cells2[y][x] = cells[5 - 1 - x][y];
+        }
+      }
+
+      // cells2 -> cells
+      for (int x = 0; x < 5; x++) {
+        cells[x] = cells2[x].clone();
+      }
+
+    }
+
+    int[][] shape = new int[oldShape.length][2];
+
+    // ZZZ が入っている座標だけを抜き出す
+    int i = 0;
+    for (int y = 0; y < 5; y++) {
+      for (int x = 0; x < 5; x++) {
+        if (cells2[y][x] != null && cells2[y][x].equals("ZZZ")) {
+          shape[i][0] = x;
+          shape[i][1] = y;
+          i++;
+        }
+      }
+    }
+
+    return shape;
+  }
+
+  /**
    * ブロックの色表示
    */
-  private void drawBlock(int index, int x, int y, String[][] cells, String color) {
+  private void drawBlock(int index, int x, int y, String[][] cells, String color, int angle) {
     int[][] block = BLOCK_SHAPE[index];
+    block = calcBlockShape(block, angle);
+    drawBlock(block, x, y, cells, color);
+  }
+  private void drawBlock(int[][] block, int x, int y, String[][] cells, String color) {
     for (int[] position : block) {
       cells[y + position[1]][x + position[0]] = color;
     }
@@ -312,8 +364,9 @@ public class HomeController {
   /**
    * ブロックを置けるかどうかのチェック
    */
-  private boolean checkBlock(int index, int x, int y, String[][] cells, String color) {
+  private boolean checkBlock(int index, int x, int y, String[][] cells, String color, int angle) {
     int[][] block = BLOCK_SHAPE[index];
+    block = calcBlockShape(block, angle);
     boolean isCheck = false;
 
     for (int[] position : block) {
@@ -376,15 +429,6 @@ public class HomeController {
         isCheck = true;
       }
     }
-    /*
-    if (isCheck) {
-      for (int[] position : block) {
-        int newY = y + position[1];
-        int newX = x + position[0];
-        cells[newY][newX] = nowPlayer + 10;
-      }
-    }
-    */
     return isCheck;
   }
 

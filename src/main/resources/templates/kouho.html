@@ -27,6 +27,11 @@
               </td>
           </tr>
         </table>
+        <div class="inline-top">
+          <a th:href="@{/kouho(block=${selectBlock}, id=${id}, angle=${angle+1})}" class="btn btn-primary">
+            ９０度回転する
+          </a>
+        </div>
         <p><small>現在選択中のブロックは白色で表示しています</small></p>
 
         <hr />
@@ -38,7 +43,7 @@
         <!-- 候補を並べる -->
         <div th:each="kouho : ${kouhoList}">
           <!-- ゲーム盤 -->
-          <a th:href="@{/oku(block=${selectBlock}, id=${id}, x=${kouho.getX()}, y=${kouho.getY()})}">
+          <a th:href="@{/oku(block=${selectBlock}, id=${id}, x=${kouho.getX()}, y=${kouho.getY()}, angle=${angle})}">
             <table class="inline-top">
                 <tr th:each="row, statY : ${kouho.getCells()}">
                     <td th:each="cell, statX : ${row}" class="cell" th:style="'background-color: #' + ${cell}">
@@ -46,7 +51,7 @@
                 </tr>
             </table>
           </a>
-           <hr />
+          <hr />
         </div>
 
         <!-- 候補-->
