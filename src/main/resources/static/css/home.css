@@ -1,36 +1,9 @@
 td {
-    width: 15px;
-    height: 15px;
+    width: 20px;
+    height: 20px;
     border: 1px solid black;
     text-align: center;
 }
-
-.cell0 {
-    background-color: lightgray;
-}
-
-.cell1 {
-    background-color: red;
-}
-.cell11 {
-    background-color: red;
-    opacity: 0.55;
-}
-
-
-
-.cell2 {
-    background-color: blue;
-}
-
-.cell3 {
-    background-color: yellow;
-}
-
-.cell4 {
-    background-color: green;
-}
-
 a {
     font-size: small;
     text-decoration: none;
@@ -46,4 +19,14 @@ a {
 .inline-top {
     display: inline-block;
     vertical-align: top;
+}
+
+.kouho-item {
+    padding: 5px;
+    color: black;
+    margin: 3px;
+}
+
+.kouho-list {
+    padding-left: 5px;
 }

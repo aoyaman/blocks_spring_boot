@@ -103,7 +103,7 @@ public class HomeController {
         // ブロックのデータをDBに保存
         Block block = new Block();
         block.setBlockType(i);                    // ブロックの種類
-        block.setColor(p + 1);                    // ブロックの色は、プレイヤーのindex+1
+        block.setPlayer(p + 1);                   // プレイヤー番号(１始まり)
         block.setGameId(g.getId());               // gameテーブルのid
         block.setStatus(Block.STATUS_NOT_SETTED); // 状態=未セット
         blockRepository.save(block);
@@ -116,6 +116,9 @@ public class HomeController {
     return modelAndView;
   }
 
+  /**
+   * ゲーム盤を表示する
+   */
   @RequestMapping("/play")
   public String play(Model model, @RequestParam(name = "block", defaultValue = "0") int selectBlock, @RequestParam(name = "id",required = true, defaultValue = "0") int id, @RequestParam(name = "x", defaultValue = "-1") int kouhoX, @RequestParam(name = "y", defaultValue = "-1") int kouhoY) {
 
@@ -125,65 +128,77 @@ public class HomeController {
       System.out.println("ERROR! game id is not found! id=" + id);
       return "redirect:/";
     }
+    int nowPlayer = ret.get().getNowPlayer();
+    String nowPlayerColor = Color.getColor(nowPlayer);
 
     // 表示用のセル配置を作成
-    int[][] cells = new int[20][20];
+    String[][] cells = new String[20][20];
     for (int y = 0; y < cells.length; y++) {
       for (int x = 0; x < cells[y].length; x++) {
-        cells[y][x] = 0;
+        cells[y][x] = Color.DEFAULT;
       }
     }
 
     // セット済みのブロック情報を取得
     List<Block> settedBlocks = blockRepository.findByGameIdAndStatus(id, Block.STATUS_SETTED);
     for (Block block : settedBlocks) {
-      drawBlock(block.getBlockType(), block.getX(), block.getY(), cells, block.getColor());
+      drawBlock(block.getBlockType() - 1, block.getX(), block.getY(), cells, Color.getColor(block.getPlayer()));
     }
 
 
     // テスト用コード
-    drawBlock(10, 10, 10, cells, 1);
+    // drawBlock(10, 10, 10, cells, Color.getColor(1));
 
     // 候補表示用の配列を作成
-    int[][] nexts = new int[12][23];
+    Cell[][] nexts = new Cell[12][23];
     for (int y = 0; y < nexts.length; y++) {
       for (int x = 0; x < nexts[y].length; x++) {
-        nexts[y][x] = 0;
+        nexts[y][x] = new Cell(Color.DEFAULT, 0);
       }
     }
-    List<Block> notSetBlocks = blockRepository.findByGameIdAndStatusAndColor(id, Block.STATUS_NOT_SETTED, ret.get().getNowPlayer());
+    List<Block> notSetBlocks = blockRepository.findByGameIdAndStatusAndPlayer(id, Block.STATUS_NOT_SETTED, nowPlayer);
     for (Block block : notSetBlocks) {
-      drawBlock(block.getBlockType(), NEXT_POSITIONS[block.getBlockType()][0], NEXT_POSITIONS[block.getBlockType()][1], nexts, block.getBlockType() + 1);
+      drawNextBlock(block, nexts, Color.getColor(block.getPlayer()));
     }
 
 
-    List<List<Integer>> kouhoList = new ArrayList<List<Integer>>();
-    int[][] selectCells = new int[5][5];
+    List<Kouho> kouhoList = new ArrayList<Kouho>(); // 置ける場所の候補リスト
+    String[][] selectCells = new String[5][5];
+    for (int y = 0; y < selectCells.length; y++) {
+      for (int x = 0; x < selectCells[y].length; x++) {
+        selectCells[y][x] = Color.DEFAULT;
+      }
+    }
     if (selectBlock > 0) {
-      drawBlock(selectBlock - 1, 0, 0, selectCells, selectBlock);
+      // 選択しているブロックを表示
+      drawBlock(selectBlock - 1, 0, 0, selectCells, nowPlayerColor);
 
+      // 置ける場所の候補リスト
       for (int y = 0; y < cells.length; y++) {
         for (int x = 0; x < cells[y].length; x++) {
-          if (checkBlock(selectBlock - 1, x, y, cells, ret.get().getNowPlayer())) {
-            List<Integer> xy = new ArrayList<Integer>();
-            xy.add(x);
-            xy.add(y);
-            kouhoList.add(xy);
+          if (checkBlock(selectBlock - 1, x, y, cells, nowPlayerColor)) {
+            String color = Color.getColor(nowPlayer, kouhoList.size() + 1);
+            if (x == kouhoX && y == kouhoY) {
+              color = "ffffff"; // 選択色
+            }
+            Kouho kouho = new Kouho(x, y, color);
+            kouhoList.add(kouho);
           }
         }
       }
 
-      // 選択している候補の色を変更する
-      if (kouhoX >= 0 && kouhoY >= 0 && checkBlock(selectBlock - 1, kouhoX, kouhoY, cells, ret.get().getNowPlayer())) {
+      // 候補の表示
+      for (Kouho kouho : kouhoList) {
         for (int[] position : BLOCK_SHAPE[selectBlock - 1]) {
-          int newY = kouhoY + position[1];
-          int newX = kouhoX + position[0];
-          cells[newY][newX] = ret.get().getNowPlayer() + 10;  // 候補なので+10して区別をつける
+          int newY = kouho.getY() + position[1];
+          int newX = kouho.getX() + position[0];
+          if (newX == kouhoX && newY == kouhoY) {
+            cells[newY][newX] = "ffffff"; // 選択色
+          } else {
+            cells[newY][newX] = kouho.getColor(); // t.get().getNowPlayer() + 10;  // 候補なので+10して区別をつける
+          }
         }
       }
-
-
-
 
     }
 
@@ -194,26 +209,80 @@ public class HomeController {
     model.addAttribute("kouhoX", kouhoX);
     model.addAttribute("kouhoY", kouhoY);
     model.addAttribute("kouhoList", kouhoList);
-    model.addAttribute("nowPlayer", ret.get().getNowPlayer());
+    model.addAttribute("nowPlayer", nowPlayer);
+    model.addAttribute("nowPlayerColor", nowPlayerColor);
     model.addAttribute("id", ret.get().getId());
 
     return "play";
   }
 
-  private void drawBlock(int index, int x, int y, int[][] cells, int value) {
+  /**
+   * ブロックを置いたアクション
+   */
+  @RequestMapping("/oku")
+  public ModelAndView oku(Model model, @RequestParam(name = "block", required = true, defaultValue = "0") int selectBlock, @RequestParam(name = "id",required = true, defaultValue = "0") int id, @RequestParam(name = "x", required = true, defaultValue = "-1") int x, @RequestParam(name = "y", required = true, defaultValue = "-1") int y) {
+
+    // idでgameテーブルを検索する
+    Optional<Game> ret = gameRepository.findById(id);
+    if (!ret.isPresent()) {
+      System.out.println("ERROR! game id is not found! id=" + id);
+      return new ModelAndView("redirect:/");
+    }
+    Game game = ret.get();
+
+    // 現在操作中のプレイヤーの選択ブロックを取得
+    List<Block> blocks = blockRepository.findByGameIdAndPlayerAndBlockType(id, game.getNowPlayer(), selectBlock);
+    if (blocks == null || blocks.size() <= 0) {
+      System.out.println("ERROR! selectBlock is not found! selectBlock=" + selectBlock);
+      return new ModelAndView("redirect:/");
+    }
+    Block block = blocks.get(0);
+    if (block.getStatus() == Block.STATUS_NOT_SETTED) { // まだセットされていない場合のみ
+      block.setStatus(Block.STATUS_SETTED);
+      block.setX(x);
+      block.setY(y);
+      blockRepository.save(block);
+    }
+
+    // 次のプレイヤーに移動
+    game.goNextPlayer();
+    gameRepository.save(game);
+
+    // play画面へリダイレクト
+    ModelAndView modelAndView = new ModelAndView("redirect:/play");
+    modelAndView.addObject("id", id);
+    return modelAndView;
+  }
+
+  /**
+   * ブロックの色表示
+   */
+  private void drawBlock(int index, int x, int y, String[][] cells, String color) {
     int[][] block = BLOCK_SHAPE[index];
     for (int[] position : block) {
-      cells[y + position[1]][x + position[0]] = value;
+      cells[y + position[1]][x + position[0]] = color;
     }
   }
 
-  private boolean checkBlock(int index, int x, int y, int[][] cells, int nowPlayer) {
+  /**
+   * ブロック候補の表示
+   */
+  private void drawNextBlock(Block block, Cell[][] cells, String color) {
+    int index = block.getBlockType();
+    int x =  NEXT_POSITIONS[block.getBlockType()][0];
+    int y =  NEXT_POSITIONS[block.getBlockType()][1];
+    Cell cell = new Cell(color, block.getBlockType() + 1);
+    for (int[] position : BLOCK_SHAPE[index]) {
+      cells[y + position[1]][x + position[0]] = cell;
+    }
+  }
+
+  /**
+   * ブロックを置けるかどうかのチェック
+   */
+  private boolean checkBlock(int index, int x, int y, String[][] cells, String color) {
     int[][] block = BLOCK_SHAPE[index];
     boolean isCheck = false;
-
-    if (x == 17 && y == 18) {
-      System.out.println("test");
-    }
 
     for (int[] position : block) {
       int newY = y + position[1];
@@ -228,44 +297,44 @@ public class HomeController {
       }
 
       // すでにあってもダメ！
-      if (cells[newY][newX] > 0) {
+      if (cells[newY][newX].equals(Color.DEFAULT) == false) {
         return false;
       }
 
       // 右隣が同じ色ならダメ
-      if (newX < cells[newY].length - 1 && cells[newY][newX + 1] == nowPlayer) {
+      if (newX < cells[newY].length - 1 && cells[newY][newX + 1].equals(color)) {
         return false;
       }
       // 左隣が同じ色ならダメ
-      if (newX > 0 && cells[newY][newX - 1] == nowPlayer) {
+      if (newX > 0 && cells[newY][newX - 1].equals(color)) {
         return false;
       }
       // 下隣が同じ色ならダメ
-      if (newY < cells.length - 1 && cells[newY + 1][newX] == nowPlayer) {
+      if (newY < cells.length - 1 && cells[newY + 1][newX].equals(color)) {
         return false;
       }
       // 上隣が同じ色ならダメ
-      if (newY > 0 && cells[newY - 1][newX] == nowPlayer) {
+      if (newY > 0 && cells[newY - 1][newX].equals(color)) {
         return false;
       }
 
       // 右上が同じ色ならOK
-      if (newY > 0 && newX < cells[newY].length - 1 && cells[newY - 1][newX + 1] == nowPlayer) {
+      if (newY > 0 && newX < cells[newY].length - 1 && cells[newY - 1][newX + 1].equals(color)) {
         isCheck = true;
       }
 
       // 左上が同じ色ならOK
-      if (newY > 0 && newX > 0 && cells[newY - 1][newX - 1] == nowPlayer) {
+      if (newY > 0 && newX > 0 && cells[newY - 1][newX - 1].equals(color)) {
         isCheck = true;
       }
 
       // 右下が同じ色ならOK
-      if (newY < cells.length - 1 && newX < cells[newY].length - 1 && cells[newY + 1][newX + 1] == nowPlayer) {
+      if (newY < cells.length - 1 && newX < cells[newY].length - 1 && cells[newY + 1][newX + 1].equals(color)) {
         isCheck = true;
       }
 
       // 左下が同じ色ならOK
-      if (newY < cells.length - 1 && newX > 0 && cells[newY + 1][newX - 1] == nowPlayer) {
+      if (newY < cells.length - 1 && newX > 0 && cells[newY + 1][newX - 1].equals(color)) {
         isCheck = true;
       }
 

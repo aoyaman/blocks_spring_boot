@@ -17,7 +17,7 @@ public class Block {
     private Integer id;
 
     private Integer blockType;  // ブロックの種類
-    private Integer color;      // 色
+    private Integer player;     // プレイヤー番号(1始まりs)
 
     private Integer x;          // 配置先のX座標
     private Integer y;          // 配置先のY座標
