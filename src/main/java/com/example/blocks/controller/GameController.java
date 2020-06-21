@@ -154,11 +154,16 @@ public class GameController {
    * ゲーム開始処理
    */
   @PostMapping(path = "/start")
-  public ModelAndView start(Principal principal) {
+  public ModelAndView start(
+    Principal principal,
+    @RequestParam(name = "player-red", defaultValue = "") String playerRed,
+    @RequestParam(name = "player-blue", defaultValue = "") String playerBlue,
+    @RequestParam(name = "player-green", defaultValue = "") String playerGreen,
+    @RequestParam(name = "player-yellow", defaultValue = "") String playerYellow) {
 
     // 現在の日時を取得
     LocalDateTime date1 = LocalDateTime.now();
-    DateTimeFormatter dtformat1 = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss.SSS E");
+    DateTimeFormatter dtformat1 = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm");
     String fdate1 = dtformat1.format(date1);
 
     // gameテーブルにデータを新規作成
@@ -169,12 +174,20 @@ public class GameController {
     g.setCounter(1);    // カウンター
     g = gameRepository.save(g);
 
+    String[] selectPlayers = new String[4];
+    selectPlayers[0] = playerRed;
+    selectPlayers[1] = playerBlue;
+    selectPlayers[2] = playerGreen;
+    selectPlayers[3] = playerYellow;
+
+    int cpuCounter = 1;
+
     // 人数分ループ
     for (int p = 0; p < 4; p++) {
-      if (p > 0) {
+      if (selectPlayers[p].isEmpty()) {
         Player player = new Player();
         player.setGameId(g.getId());
-        player.setCpu("cpu" + p);
+        player.setCpu("cpu" + cpuCounter++);
         player.setNumber(p + 1);
         player.setPass(false);
         player.setZanBlockCount(BLOCK_SHAPE.length);
@@ -182,7 +195,7 @@ public class GameController {
       } else {
         Player player = new Player();
         player.setGameId(g.getId());
-        player.setAccountName(principal.getName());
+        player.setAccountName(selectPlayers[p]);
         player.setNumber(p + 1);
         player.setPass(false);
         player.setZanBlockCount(BLOCK_SHAPE.length);
@@ -313,7 +326,7 @@ public class GameController {
     // ログインユーザの手番かどうか
     boolean isLoginUserNow = p.getAccountName() != null && p.getAccountName().equals(principal.getName());
     String cpuHandUrl = null;
-    if (isLoginUserNow == false && p.getCpu().isEmpty() == false) {
+    if (isLoginUserNow == false && p.getCpu() != null && p.getCpu().isEmpty() == false) {
       // CPUの手番の場合は、CPUの手を作成
       Hand hand = makeCpuHand(cells, notSetBlocks, p.getCpu(), nowPlayerColor);
       cpuHandUrl = "/game/oku?" +

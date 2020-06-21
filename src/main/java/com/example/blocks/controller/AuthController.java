@@ -74,7 +74,7 @@ public class AuthController {
       e.printStackTrace();
     }
 
-    return "redirect:/messages";
+    return "redirect:/";
   }
 
 }
