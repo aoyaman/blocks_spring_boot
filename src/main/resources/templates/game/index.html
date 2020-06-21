@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
+<head th:replace="common :: meta_header('ホーム',~{::link},~{::script})">
+    <!-- このページ固有で読み込むCSS/JS -->
+    <link rel="stylesheet" th:href="@{/css/home.css}" />
+</head>
+
+<body>
+    <div class="container">
+        <div th:replace="common :: header"></div>
+
+        <div class="contents">
+
+            <div class="card" style="width: 18rem;">
+                <div class="card-body">
+                    <h5 class="card-title">新規ゲーム</h5>
+
+                    <form action="/game/start" method="post">
+
+                        <!-- 赤 -->
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addonRed">赤</span>
+                            </div>
+                            <select class="form-control" aria-label="Username" aria-describedby="basic-addonRed" name="player-red">
+                                <option selected th:value="${username}">あなた</option>
+                                <option value="">CPU</option>
+                                <option th:each="account : ${accounts}" th:text="${account.getUsername()}"
+                                    th:value="${account.getUsername()}">naoki
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- 青 -->
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addonBlue">青</span>
+                            </div>
+                            <select class="form-control" aria-label="Username" aria-describedby="basic-addonBlue" name="player-blue">
+                                <option th:value="${username}">あなた</option>
+                                <option selected value="">CPU</option>
+                                <option th:each="account : ${accounts}" th:text="${account.getUsername()}"
+                                    th:value="${account.getUsername()}">naoki
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- 緑 -->
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addonGreen">緑</span>
+                            </div>
+                            <select class="form-control" aria-label="Username" aria-describedby="basic-addonGreen" name="player-green">
+                                <option th:value="${username}">あなた</option>
+                                <option selected value="">CPU</option>
+                                <option th:each="account : ${accounts}" th:text="${account.getUsername()}"
+                                    th:value="${account.getUsername()}">naoki
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- 黄 -->
+                        <div class="input-group mb-3">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text" id="basic-addonYellow">黄</span>
+                            </div>
+                            <select class="form-control" aria-label="Username" aria-describedby="basic-addonYellow" name="player-yellow">
+                                <option th:value="${username}">あなた</option>
+                                <option selected value="">CPU</option>
+                                <option th:each="account : ${accounts}" th:text="${account.getUsername()}"
+                                    th:value="${account.getUsername()}">naoki
+                                </option>
+                            </select>
+                        </div>
+
+                        <input type="submit" class="btn btn-primary" value="スタート">
+                    </form>
+                </div>
+            </div>
+
+            <hr />
+
+            <table class="table table-striped game-index-table">
+                <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">日時</th>
+                        <th scope="col">開始者</th>
+                        <th scope="col">赤</th>
+                        <th scope="col">青</th>
+                        <th scope="col">緑</th>
+                        <th scope="col">黄</th>
+                        <th scope="col"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="gameInfo : ${games}">
+                        <th scope="row" th:text="${gameInfo.getId()}"></th>
+                        <td th:text="${gameInfo.getDate()}"></td>
+                        <td th:text="${gameInfo.getAuthor()}"></td>
+                        <td th:text="${gameInfo.getPlayers().get(0).getName()}"></td>
+                        <td th:text="${gameInfo.getPlayers().get(1).getName()}"></td>
+                        <td th:text="${gameInfo.getPlayers().get(2).getName()}"></td>
+                        <td th:text="${gameInfo.getPlayers().get(3).getName()}"></td>
+                        <td>
+                            <a th:href="@{/game/show(id=${gameInfo.getId()})}" class="btn btn-primary">入る</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+
+        </div>
+
+    </div>
+</body>
+
+</html>

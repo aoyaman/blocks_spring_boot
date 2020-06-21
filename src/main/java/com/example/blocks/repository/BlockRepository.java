@@ -1,6 +1,8 @@
-package com.example.blocks;
+package com.example.blocks.repository;
 
 import java.util.List;
+
+import com.example.blocks.entity.Block;
 
 import org.springframework.data.repository.CrudRepository;
 

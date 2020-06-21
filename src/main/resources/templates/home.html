@@ -1,25 +1,33 @@
 <!DOCTYPE html>
-
 <html xmlns:th="http://www.thymeleaf.org">
 
 <head>
-    <title>Blocks by Spring Boot</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta charset="utf-8" />
+    <title>Blocks</title>
 
     <!-- bootstrap -->
-    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-        integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <link href="https://getbootstrap.com/docs/4.0/examples/signin/signin.css" rel="stylesheet" crossorigin="anonymous">
 
-    <link th:href="@{/css/home.css}" rel="stylesheet">
 </head>
 
 <body>
-    <h1>Blocks by Spring Boot</h1>
+    <div class="container">
 
-    <form action="/start" method="post">
-        <input type="submit" value="スタート">
-    </form>
+        <form class="form-signin">
+            <h2 class="form-signin-heading">Blocks <small>by spring boot</small></h2>
 
+            <img th:src="@{/image/blocks_image.jpg}" width="100%" />
+
+            <hr />
+
+            <p><a th:href=" @{/login} " class="btn btn-lg btn-primary btn-block">ログイン</a></p>
+
+            <p><a th:href=" @{/signup} ">新規アカウント登録する</a></p>
+        </form>
+
+
+    </div>
 </body>
 
 </html>

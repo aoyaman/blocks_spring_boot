@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
+<head th:replace="common :: meta_header('ホーム',~{::link},~{::script})">
+    <!-- このページ固有で読み込むCSS/JS -->
+    <link rel="stylesheet" th:href="@{/css/home.css}" />
+</head>
+
+<body>
+    <div class="container">
+        <div th:replace="common :: header"></div>
+
+        <h4 th:if="${isAllPass}">ゲーム終了しました！</h4>
+        <p th:if="${isAllPass}" th:text="${minPlayer.getColor()} + 'の' + ${minPlayer.getName()} + 'の勝利です。'"></p>
+
+        <!-- ゲーム盤 -->
+        <table class="inline-top">
+            <tr th:each="row, statY : ${cells}">
+                <td th:each="cell, statX : ${row}" class="cell" th:style="'background-color: #' + ${cell}">
+                </td>
+            </tr>
+        </table>
+
+        <!-- プレイヤー達の情報-->
+        <div class="inline-top">
+            <table class="table players-table">
+                <tr th:each="info : ${playersInfo}">
+                    <td th:text="${info.getColor()}"></td>
+                    <td th:text="${info.getName()}"></td>
+                    <td th:text="'残り' + ${info.getBlockZansu()} + '個'"></td>
+                    <td th:text="${info.isPass() == true}? 'パス' : ''"></td>
+                </tr>
+            </table>
+        </div>
+        <hr />
+
+        <div th:unless="${isAllPass}">
+
+            <!-- メッセージ -->
+            <p th:if="${isLoginUserNow}">あなたの番です。置きたいブロックを選択してください。</p>
+            <p th:unless="${isLoginUserNow}">「<span th:text="${nowPlayerName}"></span>」の番です。お待ちください。</p>
+
+            <!-- 手持ちのブロック -->
+            <table style="display: inline-block;" th:if="${isLoginUserNow}">
+                <tr th:each="row : ${nexts}">
+                    <td th:each="cell : ${row}" class="cell" th:style="'background-color: #' + ${cell.getColor()}">
+                        <a th:href="@{/game/kouho(block=${cell.getBlockType()}, id=${id})}" th:if="${cell.isDefault() == false}">
+                            <div class="cellBlock"></div>
+                        </a>
+                    </td>
+                </tr>
+            </table>
+
+            <hr />
+            <a th:if="${isLoginUserPass}" class="btn btn-danger" th:href="@{/game/oku(block=${0}, id=${id}, x=${0}, y=${0}, angle=${0}, pass=${true})}">
+                パスする
+            </a>
+        </div>
+
+        <div th:if="${isAllPass}">
+            <a class="btn btn-primary" th:href="@{/game/index}">
+                閉じる
+            </a>
+        </div>
+
+    </div>
+
+    <script th:inline="javascript">
+        var timerFunc = function() {
+            console.log('timer!');
+            var autoUrl = /*[[${cpuHandUrl}]]*/ null;
+            if (autoUrl) {
+                window.location.href = autoUrl;;
+            }
+        }
+        setTimeout(timerFunc, 3000);
+    </script>
+
+</body>
+
+</html>

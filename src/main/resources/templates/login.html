@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org" xmlns:sec="https://www.thymeleaf.org/thymeleaf-extras-springsecurity3">
+
+<head>
+    <title>Spring Security Example </title>
+
+    <!-- bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <link href="https://getbootstrap.com/docs/4.0/examples/signin/signin.css" rel="stylesheet" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="container">
+
+        <form th:action="@{/login}" method="post" class="form-signin">
+            <h4 class="form-signin-heading">ログインしてください</h4>
+
+            <div th:if="${session['SPRING_SECURITY_LAST_EXCEPTION']} != null" class="alert alert-danger">
+                ユーザ名かパスワードが正しくありません
+            </div>
+
+            <p>
+                <label for="username" class="sr-only"> ユーザ名</label>
+                <input type="text" id="username" name="username" class="form-control" placeholder="username" required autofocus />
+            </p>
+
+            <p>
+                <label for="password" class="sr-only">パスワード</label>
+                <input type="password" id="password" name="password" class="form-control" placeholder="password" />
+            </p>
+
+            <p><input type="submit" class="btn btn-lg btn-primary btn-block" value="ログイン" /></p>
+
+            <p><a th:href="@{/signup}">アカウントの新規登録</a></p>
+
+            <p><a th:href="@{/}">ホーム画面へ</a></p>
+        </form>
+
+
+    </div>
+</body>
+
+</html>
