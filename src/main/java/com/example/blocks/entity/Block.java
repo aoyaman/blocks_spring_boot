@@ -1,4 +1,4 @@
-package com.example.blocks;
+package com.example.blocks.entity;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;

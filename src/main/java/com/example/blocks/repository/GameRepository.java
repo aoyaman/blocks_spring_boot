@@ -1,5 +1,6 @@
-package com.example.blocks;
+package com.example.blocks.repository;
 
+import com.example.blocks.entity.Game;
 
 import org.springframework.data.repository.CrudRepository;
 

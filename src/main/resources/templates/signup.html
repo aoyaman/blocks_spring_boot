@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="utf-8" />
+    <title>Sign up page</title>
+
+    <!-- bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+    <link href="https://getbootstrap.com/docs/4.0/examples/signin/signin.css" rel="stylesheet" crossorigin="anonymous">
+
+</head>
+
+<body>
+    <div class="container">
+
+        <form action="#" th:action="@{/signup}" th:object="${signupForm}" method="post" class="form-signin">
+            <h2 class="form-signin-heading">アカウントの作成</h2>
+
+            <p><label for="username">ユーザ名</label>:
+                <input type="text" id="username" name="username" autofocus="autofocus" class="form-control" />
+                <em th:if="${#fields.hasErrors('username')}" th:errors="*{username}">Username Error</em>
+            </p>
+
+            <p><label for="password">パスワード</label>:
+                <input type="password" id="password" name="password" class="form-control" />
+                <em th:if="${#fields.hasErrors('password')}" th:errors="*{password}">Password Error</em>
+            </p>
+
+            <p><label for="mailAddress">メールアドレス</label>:
+                <input type="email" id="mailAddress" name="mailAddress" class="form-control" />
+                <em th:if="${#fields.hasErrors('mailAddress')}" th:errors="*{mailAddress}">Mail Address Error</em>
+            </p>
+
+            <p>
+                <input type="submit" value="登録" />
+            </p>
+
+            <p><a th:href=" @{/login} ">ログイン画面へ</a></p>
+
+            <p><a th:href="@{/} ">Back to home</a></p>
+        </form>
+
+
+    </div>
+</body>
+
+</html>

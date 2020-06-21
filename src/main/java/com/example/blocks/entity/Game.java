@@ -1,4 +1,4 @@
-package com.example.blocks;
+package com.example.blocks.entity;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -17,12 +17,16 @@ public class Game {
 
   private String date;        // 日時
   private Integer nowPlayer;  // 現在操作中のプレイヤー
+  private Integer counter;    // 手順のカウンター
+
+  private String author;      // ゲーム開始者
 
   public void goNextPlayer() {
     nowPlayer++;
     if (nowPlayer > PLAYER_NUM) {
       nowPlayer = 1;
     }
+    counter++;
   }
 
 }

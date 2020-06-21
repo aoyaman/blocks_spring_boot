@@ -1,0 +1,4 @@
+2020-06-21 11:24:49 jdbc[3]: exception
+org.h2.jdbc.JdbcSQLException: テーブル "ACCOUNTS" が見つかりません
+Table "ACCOUNTS" not found; SQL statement:
+select account0_.username as username1_1_0_, account0_.created_at as created_2_1_0_, account0_.enabled as enabled3_1_0_, account0_.mail_address as mail_add4_1_0_, account0_.mail_address_verified as mail_add5_1_0_, account0_.password as password6_1_0_ from accounts account0_ where account0_.username=? [42102-194]

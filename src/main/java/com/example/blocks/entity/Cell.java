@@ -1,4 +1,6 @@
-package com.example.blocks;
+package com.example.blocks.entity;
+
+import com.example.blocks.service.Color;
 
 import lombok.Data;
 

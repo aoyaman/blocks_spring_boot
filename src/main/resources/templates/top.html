@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <title>Blocks by Spring Boot</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+    <!-- bootstrap -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
+
+    <link th:href="@{/css/home.css}" rel="stylesheet">
+</head>
+
+<body>
+    <h1>Blocks by Spring Boot</h1>
+
+    <div class="container">
+        <div th:fragment="logout" sec:authorize="isAuthenticated()">
+            <p>こんにちは:
+                <span sec:authentication="name"></span>さん</p>
+            <p>mail:
+                <span sec:authentication="principal.mailAddress"></span></p>
+            <p>権限:
+                <span sec:authentication="principal.authorities"></span></p>
+            <form action="#" th:action="@{/logout}" method="post">
+                <input type="submit" value="ログアウト" />
+            </form>
+        </div>
+    </div>
+</body>
+
+</html>

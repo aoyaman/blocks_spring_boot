@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+
+<head th:replace="common :: meta_header('ホーム',~{::link},~{::script})">
+    <!-- このページ固有で読み込むCSS/JS -->
+    <link rel="stylesheet" th:href="@{/css/home.css}" />
+</head>
+
+<body>
+    <div class="container">
+        <div th:replace="common :: header"></div>
+
+        <form action="/game/start" method="post">
+            <input type="submit" class="btn btn-primary" value="新規ゲームスタート">
+        </form>
+
+        <hr />
+
+        <table class="table table-striped game-index-table">
+            <thead>
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">日時</th>
+                    <th scope="col">開始者</th>
+                    <th scope="col">赤</th>
+                    <th scope="col">青</th>
+                    <th scope="col">緑</th>
+                    <th scope="col">黄</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="gameInfo : ${games}">
+                    <th scope="row" th:text="${gameInfo.getId()}"></th>
+                    <td th:text="${gameInfo.getDate()}"></td>
+                    <td th:text="${gameInfo.getAuthor()}"></td>
+                    <td th:text="${gameInfo.getPlayers().get(0).getName()}"></td>
+                    <td th:text="${gameInfo.getPlayers().get(1).getName()}"></td>
+                    <td th:text="${gameInfo.getPlayers().get(2).getName()}"></td>
+                    <td th:text="${gameInfo.getPlayers().get(3).getName()}"></td>
+                    <td>
+                        <a th:href="@{/game/show(id=${gameInfo.getId()})}" class="btn btn-primary">入る</a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+</body>
+
+</html>

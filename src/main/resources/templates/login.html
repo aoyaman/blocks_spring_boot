@@ -12,28 +12,31 @@
 <body>
     <div class="container">
 
-        <div th:if="${param.logout}">
-            You have been logged out.
-        </div>
         <form th:action="@{/login}" method="post" class="form-signin">
-            <h2 class="form-signin-heading">Please sign in</h2>
+            <h4 class="form-signin-heading">ログインしてください</h4>
 
-            <div th:if="${param.error}" class="alert alert-danger">
+            <div th:if="${session['SPRING_SECURITY_LAST_EXCEPTION']} != null" class="alert alert-danger">
                 ユーザ名かパスワードが正しくありません
             </div>
 
             <p>
-                <label for="username" class="sr-only"> User Name</label>
+                <label for="username" class="sr-only"> ユーザ名</label>
                 <input type="text" id="username" name="username" class="form-control" placeholder="username" required autofocus />
             </p>
 
             <p>
-                <label for="password" clss="sr-only">Password</label>
+                <label for="password" class="sr-only">パスワード</label>
                 <input type="password" id="password" name="password" class="form-control" placeholder="password" />
             </p>
 
-            <input type="submit" class="btn btn-lg btn-primary btn-block" value="Sign In" />
+            <p><input type="submit" class="btn btn-lg btn-primary btn-block" value="ログイン" /></p>
+
+            <p><a th:href="@{/signup}">アカウントの新規登録</a></p>
+
+            <p><a th:href="@{/}">ホーム画面へ</a></p>
         </form>
+
+
     </div>
 </body>
 
