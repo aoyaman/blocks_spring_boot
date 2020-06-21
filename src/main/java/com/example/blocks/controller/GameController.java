@@ -9,6 +9,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
+import com.example.blocks.entity.Account;
 import com.example.blocks.entity.Block;
 import com.example.blocks.entity.Cell;
 import com.example.blocks.entity.Game;
@@ -18,6 +19,7 @@ import com.example.blocks.entity.Kouho;
 import com.example.blocks.entity.Player;
 import com.example.blocks.entity.PlayerInfo;
 import com.example.blocks.entity.Record;
+import com.example.blocks.repository.AccountRepository;
 import com.example.blocks.repository.BlockRepository;
 import com.example.blocks.repository.GameRepository;
 import com.example.blocks.repository.PlayerRepository;
@@ -104,6 +106,9 @@ public class GameController {
   @Autowired
   RecordRepository recordRepository;
 
+  @Autowired
+  AccountRepository accountRepository;
+
   // --- Mapping --------------------------------
 
   @GetMapping("/index")
@@ -113,6 +118,9 @@ public class GameController {
     if (principal == null) {
       return "redirect:/login";
     }
+
+    // アカウントリスト
+    Iterable<Account> accounts = accountRepository.findAll();
 
     // 表示用のデータを作成していく
     List<GameInfo> games = new ArrayList<GameInfo>();
@@ -137,6 +145,7 @@ public class GameController {
     }
 
     model.addAttribute("username", principal.getName());
+    model.addAttribute("accounts", accounts);
     model.addAttribute("games", games);
     return "game/index";
   }
