@@ -16,6 +16,8 @@ import com.example.blocks.entity.Game;
 import com.example.blocks.entity.GameInfo;
 import com.example.blocks.entity.Hand;
 import com.example.blocks.entity.Kouho;
+import com.example.blocks.entity.Message;
+import com.example.blocks.entity.Notification;
 import com.example.blocks.entity.Player;
 import com.example.blocks.entity.PlayerInfo;
 import com.example.blocks.entity.Record;
@@ -34,6 +36,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.util.HtmlUtils;
 
 @Controller
 @RequestMapping("/game")
@@ -262,10 +268,7 @@ public class GameController {
         nexts[y][x] = new Cell(Color.DEFAULT, 0);
       }
     }
-    List<Block> notSetBlocks = blockRepository.findByGameIdAndStatusAndPlayer(id, Block.STATUS_NOT_SETTED, nowPlayer);
-    for (Block block : notSetBlocks) {
-      drawNextBlock(block, nexts, Color.getColor(block.getPlayer()));
-    }
+    
 
 
     // プレイヤー情報を取得
@@ -294,11 +297,23 @@ public class GameController {
 
       boolean isOkeru = false;
 
+      // ログインユーザだったら
+      if (player.getAccountName() != null &&  player.getAccountName().equals(principal.getName())) {
+        // 未セットのブロックを描画する
+        List<Block> notSetBlocks = blockRepository.findByGameIdAndStatusAndPlayer(id, Block.STATUS_NOT_SETTED, player.getNumber());
+        for (Block block : notSetBlocks) {
+          drawNextBlock(block, nexts, Color.getColor(block.getPlayer()));
+        }
+        
+      }
+
       // 現在のプレイヤー
       if (player.getNumber() == nowPlayer) {
+        List<Block> notSetBlocks2 = blockRepository.findByGameIdAndStatusAndPlayer(id, Block.STATUS_NOT_SETTED, nowPlayer);
+        
         p = player;
-        playerInfo.setBlockZansu(notSetBlocks.size());
-        isOkeru = checkOkeru(notSetBlocks, cells, nowPlayerColor);
+        playerInfo.setBlockZansu(notSetBlocks2.size());
+        isOkeru = checkOkeru(notSetBlocks2, cells, nowPlayerColor);
         isLoginUserPass = isOkeru == false;
 
       // 現在のプレイヤー意外
@@ -331,14 +346,16 @@ public class GameController {
     String cpuHandUrl = null;
     if (isLoginUserNow == false && p.getCpu() != null && p.getCpu().isEmpty() == false) {
       // CPUの手番の場合は、CPUの手を作成
-      Hand hand = makeCpuHand(cells, notSetBlocks, p.getCpu(), nowPlayerColor);
+      List<Block> notSetBlocks3 = blockRepository.findByGameIdAndStatusAndPlayer(id, Block.STATUS_NOT_SETTED, p.getNumber());
+      Hand hand = makeCpuHand(cells, notSetBlocks3, p.getCpu(), nowPlayerColor);
       cpuHandUrl = "/game/oku?" +
         "block=" + hand.getBlockType() + "&" +
         "id=" + ret.get().getId() + "&" +
         "x=" + hand.getX() + "&" +
         "y=" + hand.getY() + "&" +
         "angle=" + hand.getAngle()+ "&" +
-        "pass=" + hand.isPass();
+        "pass=" + hand.isPass() + "&" +
+        "player=" + nowPlayer;
     }
 
 
@@ -456,7 +473,8 @@ public class GameController {
       @RequestParam(name = "x", required = true, defaultValue = "-1") int x,
       @RequestParam(name = "y", required = true, defaultValue = "-1") int y,
       @RequestParam(name = "angle", required = true, defaultValue = "angle") int angle,
-      @RequestParam(name = "pass", required = true, defaultValue = "false") boolean pass) {
+      @RequestParam(name = "pass", required = true, defaultValue = "false") boolean pass,
+      @RequestParam(name = "player", required = true, defaultValue = "-1") int playerNumber) {
 
     // idでgameテーブルを検索する
     Optional<Game> ret = gameRepository.findById(id);
@@ -465,7 +483,12 @@ public class GameController {
       return new ModelAndView("redirect:/");
     }
     Game game = ret.get();
-
+    if(playerNumber != game.getNowPlayer()) {
+        // play画面へリダイレクト
+        ModelAndView modelAndView = new ModelAndView("redirect:/game/show");
+        modelAndView.addObject("id", id);
+        return modelAndView;
+    }
     // プレイヤーの情報
     List<Player> players = playerRepository.findByGameIdAndNumber(id, game.getNowPlayer());
     if (players == null || players.size() <= 0) {
@@ -526,6 +549,81 @@ public class GameController {
     modelAndView.addObject("id", id);
     return modelAndView;
   }
+
+  /**
+   * ブロックを置いたアクション
+   */
+  @MessageMapping("/hello")
+  @SendTo("/topic/greetings")
+  public Notification greeting(Message message) throws Exception {
+
+    // idでgameテーブルを検索する
+    Optional<Game> ret = gameRepository.findById(message.getId());
+    if (!ret.isPresent()) {
+      System.out.println("ERROR! game id is not found! id=" + message.getId());
+      // return new ModelAndView("redirect:/");
+    }
+    Game game = ret.get();
+
+    // プレイヤーの情報
+    List<Player> players = playerRepository.findByGameIdAndNumber(message.getId(), game.getNowPlayer());
+    if (players == null || players.size() <= 0) {
+      System.out.println("ERROR! player is not found! message.getId()=" + message.getId() + ", number=" + game.getNowPlayer());
+      // return new ModelAndView("redirect:/");
+    }
+    Player player = players.get(0);
+
+    // 現在操作中のプレイヤーの選択ブロックを取得
+    if (message.isPass() == false) {
+      List<Block> blocks = blockRepository.findByGameIdAndPlayerAndBlockType(message.getId(), game.getNowPlayer(), message.getSelectBlock());
+      if (blocks == null || blocks.size() <= 0) {
+        System.out.println("ERROR! message.getSelectBlock() is not found! message.getSelectBlock()=" + message.getSelectBlock());
+        // return new ModelAndView("redirect:/");
+      }
+      Block block = blocks.get(0);
+      if (block.getStatus() == Block.STATUS_NOT_SETTED) { // まだセットされていない場合のみ
+        block.setStatus(Block.STATUS_SETTED);
+        block.setX(message.getX());
+        block.setY(message.getY());
+        block.setAngle(message.getAngle());
+        blockRepository.save(block);
+
+        // ポイント(置いたブロックのセル数)を加算する
+        int point = BLOCK_SHAPE[message.getSelectBlock()].length + player.getPoint();
+
+        // 残数を減らす、ポイントを増やす
+        player.setZanBlockCount(player.getZanBlockCount()  - 1);
+        player.setPoint(point);
+        player.setPass(player.getZanBlockCount() == 0);
+        playerRepository.save(player);
+      }
+    } else {
+      // 初めてのパスの時は保存する
+      if (player.isPass() == false) {
+        player.setPass(true);
+        playerRepository.save(player);
+      }
+    }
+
+    // 記録をつける
+    Record record = new Record();
+    record.setGameId(game.getId());
+    record.setNumber(game.getCounter());
+    record.setBlockType(message.getSelectBlock());
+    record.setX(message.getX());
+    record.setY(message.getY());
+    record.setAngle(message.getAngle());
+    record.setPass(message.isPass());
+    recordRepository.save(record);
+
+    // 次のプレイヤーに移動
+    game.goNextPlayer();
+    gameRepository.save(game);
+    // Thread.sleep(1000); // simulated delay
+    return new Notification("HelloHello");
+  }
+
+
 
   // --- Private Methods --------------------------------
 
