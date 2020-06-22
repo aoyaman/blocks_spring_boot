@@ -35,6 +35,10 @@ public class Player {
   @Column(nullable = false)
   private Integer zanBlockCount;
 
+  // ポイント
+  @Column(nullable = false)
+  private Integer point;
+
   // 手詰まりかどうか
   @Column(columnDefinition = "tinyint(1) default 0")
   private boolean pass;

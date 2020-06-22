@@ -23,14 +23,30 @@
 
         <!-- プレイヤー達の情報-->
         <div class="inline-top">
-            <table class="table players-table">
-                <tr th:each="info : ${playersInfo}">
-                    <td th:text="${info.getColor()}"></td>
-                    <td th:text="${info.getName()}"></td>
-                    <td th:text="'残り' + ${info.getBlockZansu()} + '個'"></td>
-                    <td th:text="${info.isPass() == true}? 'パス' : ''"></td>
-                </tr>
-            </table>
+            <div class="card" >
+                <div class="card-body">
+                    <table class="table players-table">
+                        <thead>
+                            <tr>
+                                <th>色</th>
+                                <th>名前</th>
+                                <th>ポイント</th>
+                                <th>残数</th>
+                                <th>パス有無</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="info : ${playersInfo}">
+                                <td th:text="${info.getColor()}"></td>
+                                <td th:text="${info.getName()}"></td>
+                                <td th:text="${info.getPoint()}"></td>
+                                <td th:text="'残り' + ${info.getBlockZansu()} + '個'"></td>
+                                <td th:text="${info.isPass() == true}? 'パス' : ''"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
         <hr />
 

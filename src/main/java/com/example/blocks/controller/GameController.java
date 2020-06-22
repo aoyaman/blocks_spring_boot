@@ -191,6 +191,7 @@ public class GameController {
         player.setNumber(p + 1);
         player.setPass(false);
         player.setZanBlockCount(BLOCK_SHAPE.length);
+        player.setPoint(0);
         playerRepository.save(player);
       } else {
         Player player = new Player();
@@ -199,6 +200,7 @@ public class GameController {
         player.setNumber(p + 1);
         player.setPass(false);
         player.setZanBlockCount(BLOCK_SHAPE.length);
+        player.setPoint(0);
         playerRepository.save(player);
       }
 
@@ -309,6 +311,7 @@ public class GameController {
       }
       playerInfo.setColor(Color.getColorKanji(player.getNumber()));
       playerInfo.setPass(isOkeru == false);
+      playerInfo.setPoint(player.getPoint());
       playersInfo.add(playerInfo);
 
       // 全員パスかどうかのチェック
@@ -486,8 +489,12 @@ public class GameController {
         block.setAngle(angle);
         blockRepository.save(block);
 
-        // 残数を減らす
+        // ポイント(置いたブロックのセル数)を加算する
+        int point = BLOCK_SHAPE[selectBlock].length + player.getPoint();
+
+        // 残数を減らす、ポイントを増やす
         player.setZanBlockCount(player.getZanBlockCount()  - 1);
+        player.setPoint(point);
         player.setPass(player.getZanBlockCount() == 0);
         playerRepository.save(player);
       }

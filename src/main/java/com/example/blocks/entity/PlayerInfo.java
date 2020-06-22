@@ -10,6 +10,7 @@ public class PlayerInfo {
   private String name;
   private String color;
   private int blockZansu;
+  private int point;
   private boolean pass;
   public boolean isPass() {
     return this.pass;
