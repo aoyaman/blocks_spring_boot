@@ -26,4 +26,12 @@ public class Block {
     private Integer gameId;     // ゲームID
     private Integer status;     // 状態
 
+    private Integer flip;     // 反転させるかどうか
+    public boolean isFlip() {
+        return flip != null && flip == 1;
+    }
+    public void setFlip(boolean flip) {
+        this.flip = flip ? 1 : 0;
+    }
+
 }

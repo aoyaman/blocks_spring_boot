@@ -260,7 +260,7 @@ public class GameController {
     List<Block> settedBlocks = blockRepository.findByGameIdAndStatus(id, Block.STATUS_SETTED);
     for (Block block : settedBlocks) {
       drawBlock(block.getBlockType(), block.getX(), block.getY(), cells, Color.getColor(block.getPlayer()),
-          block.getAngle() == null ? 0 : block.getAngle());
+          block.getAngle() == null ? 0 : block.getAngle(), block.isFlip());
     }
 
     // まだ置いていないブロックの配列を作成
@@ -389,7 +389,8 @@ public class GameController {
   @RequestMapping("/kouho")
   public String kouho(Model model, @RequestParam(name = "id", required = true, defaultValue = "0") int id,
       @RequestParam(name = "block", required = true, defaultValue = "0") int selectBlock,
-      @RequestParam(name = "angle", required = false, defaultValue = "0") int angle) {
+      @RequestParam(name = "angle", required = false, defaultValue = "0") int angle,
+      @RequestParam(name = "flip", required = false, defaultValue = "false") boolean flip) {
 
     // idでgameテーブルを検索する
     Optional<Game> ret = gameRepository.findById(id);
@@ -428,14 +429,14 @@ public class GameController {
     List<Block> settedBlocks = blockRepository.findByGameIdAndStatus(id, Block.STATUS_SETTED);
     for (Block block : settedBlocks) {
       drawBlock(block.getBlockType(), block.getX(), block.getY(), cells, Color.getColor(block.getPlayer()),
-          block.getAngle() == null ? 0 : block.getAngle());
+          block.getAngle() == null ? 0 : block.getAngle(), block.isFlip());
     }
 
     // 置ける場所の候補リスト
     List<Kouho> kouhoList = new ArrayList<Kouho>(); // 置ける場所の候補リスト
     for (int y = 0; y < cells.length; y++) {
       for (int x = 0; x < cells[y].length; x++) {
-        if (checkBlock(selectBlock, x, y, cells, nowPlayerColor, angle)) {
+        if (checkBlock(selectBlock, x, y, cells, nowPlayerColor, angle, flip)) {
 
           // 候補用の色を取得
           String color = Color.getKouhoColor(nowPlayer);
@@ -445,7 +446,8 @@ public class GameController {
           for (int i = 0; i < cells.length; i++) {
             cells2[i] = cells[i].clone();
           }
-          drawBlock(selectBlock, x, y, cells2, color, angle);
+
+          drawBlock(selectBlock, x, y, cells2, color, angle, flip);
 
           // 候補をリストに追加
           Kouho kouho = new Kouho(x, y, cells2);
@@ -461,6 +463,7 @@ public class GameController {
     model.addAttribute("nowPlayer", nowPlayer);
     model.addAttribute("nowPlayerColor", nowPlayerColor);
     model.addAttribute("id", ret.get().getId());
+    model.addAttribute("flip", flip);
 
     return "game/kouho";
   }
@@ -475,6 +478,7 @@ public class GameController {
       @RequestParam(name = "x", required = true, defaultValue = "-1") int x,
       @RequestParam(name = "y", required = true, defaultValue = "-1") int y,
       @RequestParam(name = "angle", required = true, defaultValue = "angle") int angle,
+      @RequestParam(name = "flip", required = true, defaultValue = "false") boolean flip,
       @RequestParam(name = "pass", required = true, defaultValue = "false") boolean pass,
       @RequestParam(name = "player", required = true, defaultValue = "-1") int playerNumber) {
 
@@ -512,6 +516,7 @@ public class GameController {
         block.setX(x);
         block.setY(y);
         block.setAngle(angle);
+        block.setFlip(flip);
         blockRepository.save(block);
 
         // ポイント(置いたブロックのセル数)を加算する
@@ -545,7 +550,7 @@ public class GameController {
     // 次のプレイヤーに移動
     game.goNextPlayer();
     gameRepository.save(game);
-
+    model.addAttribute("flip", flip);
     // play画面へリダイレクト
     ModelAndView modelAndView = new ModelAndView("redirect:/game/show");
     modelAndView.addObject("id", id);
@@ -630,11 +635,16 @@ public class GameController {
 
   // --- Private Methods --------------------------------
 
-  /**
-   * ブロックの形を90度回転させる
+  /***
+   * ブロックを90度回転、反転させるメソッド
+   *
+   * @param oldShape 選択されたブロック
+   * @param angle 角度
+   * @param flip 反転するかどうか
+   * @return 90度回転、もしくは反転したブロックの形
    */
-  private int[][] calcBlockShape(int[][] oldShape, int angle) {
-    if (angle == 0) {
+  private int[][] calcBlockShape(int[][] oldShape, int angle, boolean flip) {
+    if (angle == 0 && flip == false) {
       return oldShape;
     }
     String[][] cells = new String[5][5];
@@ -651,6 +661,8 @@ public class GameController {
         }
       }
 
+
+
       // cells2 -> cells
       for (int x = 0; x < 5; x++) {
         cells[x] = cells2[x].clone();
@@ -658,70 +670,17 @@ public class GameController {
 
     }
 
-    int[][] shape = new int[oldShape.length][2];
-
-    // ZZZ が入っている座標だけを抜き出す
-    int i = 0;
-    for (int y = 0; y < 5; y++) {
-      for (int x = 0; x < 5; x++) {
-        if (cells2[y][x] != null && cells2[y][x].equals("ZZZ")) {
-          shape[i][0] = x;
-          shape[i][1] = y;
-          i++;
-        }
-      }
-    }
-
-    // x、yの最小値を調べる
-    int minX = 99, minY = 99;
-    for (i = 0; i < oldShape.length; i++) {
-      if (shape[i][0] < minX) {
-        minX = shape[i][0];
-      }
-      if (shape[i][1] < minY) {
-        minY = shape[i][1];
-      }
-    }
-    // 最小値が０じゃない場合はずれてるので、最小値が０になるようずらす
-    for (i = 0; i < oldShape.length; i++) {
-      if (minX > 0) {
-        shape[i][0] -= minX;
-      }
-      if (minY > 0) {
-        shape[i][1] -= minY;
-      }
-    }
-
-
-    return shape;
-  }
-
-  /**
-   * ブロックの形を反転させる
-   */
-  private int[][] calcBlockShapeFlip(int[][] oldShape, int angle) {
-    if (angle == 0) {
-      return oldShape;
-    }
-    String[][] cells = new String[5][5];
-    String[][] cells2 = new String[5][5];
-
-    // まず、左上を始点として角度なしで描く
-    drawBlock(oldShape, 0, 0, cells, "ZZZ");
-
-    for (int a = 0; a < angle; a++) {
-      // 90度回転
+    // 反転flgがあれば、反転させる
+    if (flip) {
       for (int x = 0; x < 5; x++) {
         for (int y = 0; y < 5; y++) {
-          cells2[y][x] = cells[5 - 1 - x][y];
+          cells2[y][x] = cells[y][4 - x];
         }
       }
-
-      // cells2 -> cells
-      for (int x = 0; x < 5; x++) {
+       // cells2 -> cells
+       for (int x = 0; x < 5; x++) {
         cells[x] = cells2[x].clone();
       }
-
     }
 
     int[][] shape = new int[oldShape.length][2];
@@ -765,9 +724,10 @@ public class GameController {
   /**
    * ブロックの色表示
    */
-  private void drawBlock(int index, int x, int y, String[][] cells, String color, int angle) {
+  private void drawBlock(int index, int x, int y, String[][] cells, String color, int angle, boolean flip) {
     int[][] block = BLOCK_SHAPE[index];
-    block = calcBlockShape(block, angle);
+    block = calcBlockShape(block, angle, flip);
+
     drawBlock(block, x, y, cells, color);
   }
 
@@ -793,9 +753,9 @@ public class GameController {
   /**
    * ブロックを置けるかどうかのチェック
    */
-  private boolean checkBlock(int index, int x, int y, String[][] cells, String color, int angle) {
+  private boolean checkBlock(int index, int x, int y, String[][] cells, String color, int angle, boolean flip) {
     int[][] block = BLOCK_SHAPE[index];
-    block = calcBlockShape(block, angle);
+    block = calcBlockShape(block, angle, flip);
     boolean isCheck = false;
 
     for (int[] position : block) {
@@ -886,14 +846,15 @@ public class GameController {
 
           // 回転させてチェックする
           for (int angle = 0; angle < 4; angle++) {
-
-            // チェック
-            if (checkBlock(block.getBlockType(), x, y, cells, color, angle)) {
-              hand.setX(x);
-              hand.setY(y);
-              hand.setBlockType(block.getBlockType());
-              hand.setAngle((angle));
-              return hand;
+            for (int i = 0; i < 2; i++) {
+              // チェック
+              if (checkBlock(block.getBlockType(), x, y, cells, color, angle, (i == 1))) {
+                hand.setX(x);
+                hand.setY(y);
+                hand.setBlockType(block.getBlockType());
+                hand.setAngle((angle));
+                return hand;
+              }
             }
           }
         }
@@ -914,8 +875,10 @@ public class GameController {
       for (int y = 0; y < cells.length; y++) {
         for (int x = 0; x < cells[y].length; x++) {
           for (int angle = 0; angle < 4; angle++) {
-            if (checkBlock(notSetBlocks.get(b).getBlockType(), x, y, cells, color, angle)) {
-              return true;
+            for (int i = 0; i < 2; i++) {
+              if (checkBlock(notSetBlocks.get(b).getBlockType(), x, y, cells, color, angle, (i == 1))) {
+                return true;
+              }
             }
           }
         }
