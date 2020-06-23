@@ -631,9 +631,75 @@ public class GameController {
   // --- Private Methods --------------------------------
 
   /**
-   * ブロックの形を計算する
+   * ブロックの形を90度回転させる
    */
   private int[][] calcBlockShape(int[][] oldShape, int angle) {
+    if (angle == 0) {
+      return oldShape;
+    }
+    String[][] cells = new String[5][5];
+    String[][] cells2 = new String[5][5];
+
+    // まず、左上を始点として角度なしで描く
+    drawBlock(oldShape, 0, 0, cells, "ZZZ");
+
+    for (int a = 0; a < angle; a++) {
+      // 90度回転
+      for (int x = 0; x < 5; x++) {
+        for (int y = 0; y < 5; y++) {
+          cells2[y][x] = cells[5 - 1 - x][y];
+        }
+      }
+
+      // cells2 -> cells
+      for (int x = 0; x < 5; x++) {
+        cells[x] = cells2[x].clone();
+      }
+
+    }
+
+    int[][] shape = new int[oldShape.length][2];
+
+    // ZZZ が入っている座標だけを抜き出す
+    int i = 0;
+    for (int y = 0; y < 5; y++) {
+      for (int x = 0; x < 5; x++) {
+        if (cells2[y][x] != null && cells2[y][x].equals("ZZZ")) {
+          shape[i][0] = x;
+          shape[i][1] = y;
+          i++;
+        }
+      }
+    }
+
+    // x、yの最小値を調べる
+    int minX = 99, minY = 99;
+    for (i = 0; i < oldShape.length; i++) {
+      if (shape[i][0] < minX) {
+        minX = shape[i][0];
+      }
+      if (shape[i][1] < minY) {
+        minY = shape[i][1];
+      }
+    }
+    // 最小値が０じゃない場合はずれてるので、最小値が０になるようずらす
+    for (i = 0; i < oldShape.length; i++) {
+      if (minX > 0) {
+        shape[i][0] -= minX;
+      }
+      if (minY > 0) {
+        shape[i][1] -= minY;
+      }
+    }
+
+
+    return shape;
+  }
+
+  /**
+   * ブロックの形を反転させる
+   */
+  private int[][] calcBlockShapeFlip(int[][] oldShape, int angle) {
     if (angle == 0) {
       return oldShape;
     }
