@@ -40,14 +40,15 @@ function disconnect() {
     console.log("Disconnected");
 }
 
-function sendName(selectBlock, x, y, angle, id, pass) {
+function sendName(selectBlock, x, y, angle, id, pass, flip) {
     stompClient.send("/spring-security-mvc-socket/oku", {},
                      JSON.stringify({'selectBlock': selectBlock,
                                     'x': x,
                                     'y': y,
                                     'angle': angle,
                                     'id': id,
-                                    'pass': pass,}
+                                    'pass': pass,
+                                    'flip' : flip}
                                     ));
 }
 
