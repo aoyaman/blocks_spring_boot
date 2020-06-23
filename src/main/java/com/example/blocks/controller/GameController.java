@@ -345,20 +345,6 @@ public class GameController {
 
     // ログインユーザの手番かどうか
     boolean isLoginUserNow = p.getAccountName() != null && p.getAccountName().equals(principal.getName());
-    String cpuHandUrl = null;
-    if (isLoginUserNow == false && p.getCpu() != null && p.getCpu().isEmpty() == false) {
-      // CPUの手番の場合は、CPUの手を作成
-      List<Block> notSetBlocks3 = blockRepository.findByGameIdAndStatusAndPlayer(id, Block.STATUS_NOT_SETTED, p.getNumber());
-      Hand hand = makeCpuHand(cells, notSetBlocks3, p.getCpu(), nowPlayerColor);
-      cpuHandUrl = "/game/oku?" +
-        "block=" + hand.getBlockType() + "&" +
-        "id=" + ret.get().getId() + "&" +
-        "x=" + hand.getX() + "&" +
-        "y=" + hand.getY() + "&" +
-        "angle=" + hand.getAngle()+ "&" +
-        "pass=" + hand.isPass() + "&" +
-        "player=" + nowPlayer;
-    }
 
 
     // プレイヤーの名前
@@ -374,7 +360,6 @@ public class GameController {
     model.addAttribute("id", ret.get().getId());
     model.addAttribute("isLoginUserNow", isLoginUserNow);
     model.addAttribute("isLoginUserPass", isLoginUserPass);
-    model.addAttribute("cpuHandUrl", cpuHandUrl);
     model.addAttribute("nowPlayerName", nowPlayerName);
     model.addAttribute("playersInfo", playersInfo);
     model.addAttribute("isAllPass", isAllPass);
@@ -471,6 +456,7 @@ public class GameController {
   /**
    * ブロックを置いたアクション
    */
+  /*
   @RequestMapping("/oku")
   public ModelAndView oku(Model model,
       @RequestParam(name = "block", required = true, defaultValue = "0") int selectBlock,
@@ -556,6 +542,7 @@ public class GameController {
     modelAndView.addObject("id", id);
     return modelAndView;
   }
+  */
 
   /**
    * ブロックを置いたアクション
@@ -581,28 +568,8 @@ public class GameController {
 
     // 現在操作中のプレイヤーの選択ブロックを取得
     if (message.isPass() == false) {
-      List<Block> blocks = blockRepository.findByGameIdAndPlayerAndBlockType(message.getId(), game.getNowPlayer(), message.getSelectBlock());
-      if (blocks == null || blocks.size() <= 0) {
-        System.out.println("ERROR! message.getSelectBlock() is not found! message.getSelectBlock()=" + message.getSelectBlock());
-        // return new ModelAndView("redirect:/");
-      }
-      Block block = blocks.get(0);
-      if (block.getStatus() == Block.STATUS_NOT_SETTED) { // まだセットされていない場合のみ
-        block.setStatus(Block.STATUS_SETTED);
-        block.setX(message.getX());
-        block.setY(message.getY());
-        block.setAngle(message.getAngle());
-        blockRepository.save(block);
+      setBlock(message.getId(), player, message.getSelectBlock(), message.getX(), message.getY(), message.getAngle());
 
-        // ポイント(置いたブロックのセル数)を加算する
-        int point = BLOCK_SHAPE[message.getSelectBlock()].length + player.getPoint();
-
-        // 残数を減らす、ポイントを増やす
-        player.setZanBlockCount(player.getZanBlockCount()  - 1);
-        player.setPoint(point);
-        player.setPass(player.getZanBlockCount() == 0);
-        playerRepository.save(player);
-      }
     } else {
       // 初めてのパスの時は保存する
       if (player.isPass() == false) {
@@ -623,11 +590,66 @@ public class GameController {
     recordRepository.save(record);
 
     // 次のプレイヤーに移動
-    game.goNextPlayer();
-    gameRepository.save(game);
-    // Thread.sleep(1000); // simulated delay
-    Notification notification =  new Notification("HelloHello");
-    simpMessagingTemplate.convertAndSend("/game/" + game.getId() + "/notification", notification);
+    for (int i = 0; i < 4; i++) {
+      game.goNextPlayer();
+      gameRepository.save(game);
+
+      // ゲームに参加している全メンバーへ通知する
+      Notification notification =  new Notification("HelloHello");
+      simpMessagingTemplate.convertAndSend("/game/" + game.getId() + "/notification", notification);
+
+      // 次のプレイヤー
+      List<Player> nextPlayers = playerRepository.findByGameIdAndNumber(message.getId(), game.getNowPlayer());
+      if (nextPlayers == null || nextPlayers.size() <= 0) {
+        System.out.println("ERROR! player is not found! message.getId()=" + message.getId() + ", number=" + game.getNowPlayer());
+        // return new ModelAndView("redirect:/");
+        continue;
+      }
+      Player nextPlayer = nextPlayers.get(0);
+
+      // 次の人が手詰まり状態なら飛ばす
+      if (nextPlayer.isPass()) {
+        continue;
+      }
+
+      // 次の人がコンピュータの場合
+      if (nextPlayer.getCpu() != null && nextPlayer.getCpu().isEmpty() == false) {
+        // CPUの手番の場合は、CPUの手を作成
+        List<Block> notSetBlocks3 = blockRepository.findByGameIdAndStatusAndPlayer(game.getId(), Block.STATUS_NOT_SETTED, nextPlayer.getNumber());
+
+        // 表示用のセル配置を作成
+        String[][] cells = new String[20][20];
+        for (int y = 0; y < cells.length; y++) {
+          for (int x = 0; x < cells[y].length; x++) {
+            cells[y][x] = Color.DEFAULT;
+          }
+        }
+
+        // セット済みのブロック情報を取得
+        List<Block> settedBlocks = blockRepository.findByGameIdAndStatus(game.getId(), Block.STATUS_SETTED);
+        for (Block block : settedBlocks) {
+          drawBlock(block.getBlockType(), block.getX(), block.getY(), cells, Color.getColor(block.getPlayer()),
+              block.getAngle() == null ? 0 : block.getAngle());
+        }
+
+        // CPUの手を考える
+        Hand hand = makeCpuHand(cells, notSetBlocks3, nextPlayer.getCpu(), Color.getColor(nextPlayer.getNumber()));
+
+        Thread.sleep(2000); // simulated delay
+
+        // ブロックを置く
+        setBlock(game.getId(), nextPlayer, hand.getBlockType(), hand.getX(), hand.getY(), hand.getAngle());
+
+
+      } else {
+        // 次の人が人の場合はループを抜ける
+        break;
+      }
+
+    }
+
+
+
     return "success notification";
   }
 
@@ -885,6 +907,31 @@ public class GameController {
       }
     }
     return false;
+  }
+
+  private void setBlock(int gameId, Player player, int selectBlock, int x, int y, int angle) {
+    List<Block> blocks = blockRepository.findByGameIdAndPlayerAndBlockType(gameId, player.getNumber(), selectBlock);
+      if (blocks == null || blocks.size() <= 0) {
+        System.out.println("ERROR! selectBlock is not found! selectBlock=" + selectBlock);
+        // return new ModelAndView("redirect:/");
+      }
+      Block block = blocks.get(0);
+      if (block.getStatus() == Block.STATUS_NOT_SETTED) { // まだセットされていない場合のみ
+        block.setStatus(Block.STATUS_SETTED);
+        block.setX(x);
+        block.setY(y);
+        block.setAngle(angle);
+        blockRepository.save(block);
+
+        // ポイント(置いたブロックのセル数)を加算する
+        int point = BLOCK_SHAPE[selectBlock].length + player.getPoint();
+
+        // 残数を減らす、ポイントを増やす
+        player.setZanBlockCount(player.getZanBlockCount()  - 1);
+        player.setPoint(point);
+        player.setPass(player.getZanBlockCount() == 0);
+        playerRepository.save(player);
+      }
   }
 
 }
