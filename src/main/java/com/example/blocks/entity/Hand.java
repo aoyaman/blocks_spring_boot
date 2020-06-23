@@ -9,6 +9,7 @@ public class Hand {
   private int blockType;
   private int angle;
   private boolean pass;
+  private boolean flip;
 
   public Hand() {
     this.x = 0;
@@ -16,6 +17,7 @@ public class Hand {
     this.blockType = 0;
     this.angle = 0;
     this.pass = false;
+    this.flip = false;
   }
 
   // なぜbooleanはgetter, setter自動生成されない？

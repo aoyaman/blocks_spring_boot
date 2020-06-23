@@ -568,7 +568,7 @@ public class GameController {
 
     // 現在操作中のプレイヤーの選択ブロックを取得
     if (message.isPass() == false) {
-      setBlock(message.getId(), player, message.getSelectBlock(), message.getX(), message.getY(), message.getAngle());
+      setBlock(message.getId(), player, message.getSelectBlock(), message.getX(), message.getY(), message.getAngle(), message.isFlip());
 
     } else {
       // 初めてのパスの時は保存する
@@ -629,7 +629,7 @@ public class GameController {
         List<Block> settedBlocks = blockRepository.findByGameIdAndStatus(game.getId(), Block.STATUS_SETTED);
         for (Block block : settedBlocks) {
           drawBlock(block.getBlockType(), block.getX(), block.getY(), cells, Color.getColor(block.getPlayer()),
-              block.getAngle() == null ? 0 : block.getAngle());
+              block.getAngle() == null ? 0 : block.getAngle(), block.isFlip());
         }
 
         // CPUの手を考える
@@ -638,7 +638,7 @@ public class GameController {
         Thread.sleep(2000); // simulated delay
 
         // ブロックを置く
-        setBlock(game.getId(), nextPlayer, hand.getBlockType(), hand.getX(), hand.getY(), hand.getAngle());
+        setBlock(game.getId(), nextPlayer, hand.getBlockType(), hand.getX(), hand.getY(), hand.getAngle(), hand.isFlip());
 
 
       } else {
@@ -874,6 +874,7 @@ public class GameController {
                 hand.setX(x);
                 hand.setY(y);
                 hand.setBlockType(block.getBlockType());
+                hand.setFlip(i == 1);
                 hand.setAngle((angle));
                 return hand;
               }
@@ -909,7 +910,7 @@ public class GameController {
     return false;
   }
 
-  private void setBlock(int gameId, Player player, int selectBlock, int x, int y, int angle) {
+  private void setBlock(int gameId, Player player, int selectBlock, int x, int y, int angle, boolean flip) {
     List<Block> blocks = blockRepository.findByGameIdAndPlayerAndBlockType(gameId, player.getNumber(), selectBlock);
       if (blocks == null || blocks.size() <= 0) {
         System.out.println("ERROR! selectBlock is not found! selectBlock=" + selectBlock);
@@ -921,6 +922,7 @@ public class GameController {
         block.setX(x);
         block.setY(y);
         block.setAngle(angle);
+        block.setFlip(flip);
         blockRepository.save(block);
 
         // ポイント(置いたブロックのセル数)を加算する
