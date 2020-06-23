@@ -29,6 +29,9 @@ import com.example.blocks.repository.RecordRepository;
 import com.example.blocks.service.Color;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,10 +39,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.ModelAndView;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.util.HtmlUtils;
 
 @Controller
 @RequestMapping("/game")
@@ -114,6 +113,9 @@ public class GameController {
 
   @Autowired
   AccountRepository accountRepository;
+
+  @Autowired
+  private SimpMessagingTemplate simpMessagingTemplate;
 
   // --- Mapping --------------------------------
 
@@ -268,7 +270,7 @@ public class GameController {
         nexts[y][x] = new Cell(Color.DEFAULT, 0);
       }
     }
-    
+
 
 
     // プレイヤー情報を取得
@@ -304,13 +306,13 @@ public class GameController {
         for (Block block : notSetBlocks) {
           drawNextBlock(block, nexts, Color.getColor(block.getPlayer()));
         }
-        
+
       }
 
       // 現在のプレイヤー
       if (player.getNumber() == nowPlayer) {
         List<Block> notSetBlocks2 = blockRepository.findByGameIdAndStatusAndPlayer(id, Block.STATUS_NOT_SETTED, nowPlayer);
-        
+
         p = player;
         playerInfo.setBlockZansu(notSetBlocks2.size());
         isOkeru = checkOkeru(notSetBlocks2, cells, nowPlayerColor);
@@ -553,9 +555,8 @@ public class GameController {
   /**
    * ブロックを置いたアクション
    */
-  @MessageMapping("/hello")
-  @SendTo("/topic/greetings")
-  public Notification greeting(Message message) throws Exception {
+  @MessageMapping("/oku")
+  public String okuByJs(Message message, Principal principal, @Header("simpSessionId") String sessionId) throws Exception {
 
     // idでgameテーブルを検索する
     Optional<Game> ret = gameRepository.findById(message.getId());
@@ -620,7 +621,9 @@ public class GameController {
     game.goNextPlayer();
     gameRepository.save(game);
     // Thread.sleep(1000); // simulated delay
-    return new Notification("HelloHello");
+    Notification notification =  new Notification("HelloHello");
+    simpMessagingTemplate.convertAndSend("/game/" + game.getId() + "/notification", notification);
+    return "success notification";
   }
 
 

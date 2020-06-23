@@ -1,4 +1,5 @@
 var stompClient = null;
+var userName = "";
 
 function setConnected(connected) {
     $("#connect").prop("disabled", connected);
@@ -13,13 +14,19 @@ function setConnected(connected) {
 }
 
 function connect(id) {
-    var socket = new SockJS('/gs-guide-websocket');
+    var socket = new SockJS('/secured/room');
     stompClient = Stomp.over(socket);
     stompClient.connect({}, function (frame) {
+        console.log(stompClient.ws);
+
         setConnected(true);
-        console.log('Connected: ' + frame);
-        stompClient.subscribe('/topic/greetings', function (greeting) {
+        console.log('Connected: ' ,frame, frame.headers['user-name']);
+        userName = frame.headers['user-name'];
+        stompClient.subscribe('/game/'  + id + '/notification', function (greeting) {
+        // stompClient.subscribe('/secured/user/' + userName + '/secured/user/queue/specific-user/notification', function (greeting) {
             //showGreeting(JSON.parse(greeting.body).content);
+            console.log('receive!', greeting);
+            // abort("受信");
             window.location.href = "/game/show?id=" + id;
         });
     });
@@ -34,7 +41,7 @@ function disconnect() {
 }
 
 function sendName(selectBlock, x, y, angle, id, pass) {
-    stompClient.send("/app/hello", {},
+    stompClient.send("/spring-security-mvc-socket/oku", {},
                      JSON.stringify({'selectBlock': selectBlock,
                                     'x': x,
                                     'y': y,
