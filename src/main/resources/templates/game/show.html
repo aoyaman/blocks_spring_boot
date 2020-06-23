@@ -73,9 +73,6 @@
             </table>
 
             <hr />
-            <a th:if="${isLoginUserPass}" class="btn btn-danger" th:href="@{/game/oku(block=${0}, id=${id}, x=${0}, y=${0}, angle=${0}, pass=${true}, player=${nowPlayer})}">
-                パスする
-            </a>
         </div>
 
         <div th:if="${isAllPass}">
@@ -87,14 +84,6 @@
     </div>
 
     <script th:inline="javascript">
-        var timerFunc = function() {
-            console.log('timer!');
-            var autoUrl = /*[[${cpuHandUrl}]]*/ null;
-            if (autoUrl) {
-                window.location.href = autoUrl;;
-            }
-        }
-        setTimeout(timerFunc, 3000);
         onload = function() {
             var id = /*[[${id}]]*/ null;
             connect(id);
